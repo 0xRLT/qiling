@@ -8,6 +8,7 @@ from .user32 import *
 from .wininet import *
 from .msi import *
 from .ntdll import *
+from .ucrtbase import *
 from .ucrtbased import *
 from .wsock32 import *
 from .ole32 import *
