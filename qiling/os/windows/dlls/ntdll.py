@@ -453,3 +453,34 @@ def hook_wcsstr(ql: Qiling, address: int, params):
 def hook_CsrGetProcessId(ql: Qiling, address: int, params):
     pid = ql.os.profile["PROCESSES"].getint("csrss.exe", fallback=12345)
     return pid
+
+# HANDLE RtlImageNtHeader();
+@winsdkapi(cc=STDCALL, params={'HMODULE' : POINTER})
+def hook_RtlImageNtHeader(ql: Qiling, address: int, params: dict):
+    hmodule = params["HMODULE"]
+
+    if hmodule is None:
+        return -1  # Invalid HMODULE provided
+    
+    current = hmodule
+    
+    max_iterations = 2000
+    iteration_count = 0
+
+    # Iterate until PE signature
+    while iteration_count < max_iterations:
+        byte_value = ql.mem.read(current, 1)
+        if not byte_value:
+            return -1 
+
+        if byte_value[0] == 0x50:
+            next_byte_value = ql.mem.read(current + 1, 1)
+            if next_byte_value and next_byte_value[0] == 0x45:
+                return current
+            else:
+                return -1
+
+        current += 1
+        iteration_count += 1
+
+    return -1  # Byte pattern not found within 2000 iterations
